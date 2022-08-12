@@ -1,0 +1,10 @@
+db: archive.db
+scan-level: 3
+scan-interval: 3
+archive-interval: 30
+email-to: tianming.yi@med.uni-goettingen.de
+archive-command: "rm -rf \"${path}\""
+notice-before:
+  - 10
+  - 5
+  - 1
