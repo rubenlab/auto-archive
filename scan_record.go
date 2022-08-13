@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"sort"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 type ScanResult struct {
@@ -157,8 +158,13 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 		}
 		err = SaveArchiveRecord(record)
 		if err != nil {
-			log.Printf("failed to save archived record, err: %v", err)
+			addErrResult(id, path, errors.Wrap(err, "failed to save archived record"), result)
 		}
+		archivedFolder := ArchivedFolder{
+			ID:   id,
+			Path: path,
+		}
+		result.ArchivedFolders = append(result.ArchivedFolders, archivedFolder)
 		return
 	}
 

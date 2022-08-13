@@ -22,5 +22,6 @@ func scanUpdateTime(path string) (time.Time, error) {
 		}
 		return nil
 	})
+	// log.Printf("folder %s, modify time: %v", path, lastUpdateTime)
 	return lastUpdateTime, nil
 }

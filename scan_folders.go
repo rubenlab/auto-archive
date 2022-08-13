@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -37,7 +38,10 @@ func scanFoldersInternal(rootPath string, currentLevel int, scanLevel int) error
 			continue
 		}
 		if currentLevel >= scanLevel {
-			AddDataset(path)
+			err = AddDataset(path)
+			if err != nil {
+				log.Printf("error add dataset, error: %v", err)
+			}
 			continue
 		}
 		err = scanFoldersInternal(path, currentLevel+1, scanLevel)

@@ -1,3 +1,12 @@
+# auto-archive
+
+## Usage
+
+`autoarchive config.yml`
+
+## configuration
+
+```
 db: archive.db
 server-name: "storage server"
 root: /storage
@@ -14,3 +23,5 @@ smtp-host: "smtp-mail.outlook.com"
 smtp-port: 587
 smtp-user: "rubsak1@outlook.com"
 smtp-password: "efndkubpkaksfmsx"
+
+```

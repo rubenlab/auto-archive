@@ -53,6 +53,7 @@ func CreateIfDataset(path string) (bool, error) {
 			if err != nil {
 				return false, err
 			}
+			return true, nil
 		}
 	} else { // if .datasetinfo folder already exists, then it's a dataset folder
 		data, err := ioutil.ReadFile(datasetfilePath)
@@ -69,7 +70,13 @@ func CreateIfDataset(path string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if record.Path != path {
+		if record == nil {
+			record = &DatasetRecord{
+				ID:   id,
+				Path: path,
+			}
+			UpdateRecord(record)
+		} else if record.Path != path {
 			record.Path = path
 			UpdateRecord(record)
 		}

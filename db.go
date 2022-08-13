@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/gob"
-	"log"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -46,7 +45,11 @@ func initDb() (*bolt.DB, error) {
 func AddRecord(record *DatasetRecord) error {
 	err := currentDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(Bucket_Active))
-		bucket.Put([]byte(record.ID), encodeRecord(record))
+		data, err := encodeRecord(record)
+		if err != nil {
+			return err
+		}
+		bucket.Put([]byte(record.ID), data)
 		return nil
 	})
 	return err
@@ -61,31 +64,37 @@ func GetRecord(id string) (*DatasetRecord, error) {
 	err := currentDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(Bucket_Active))
 		data := bucket.Get([]byte(id))
-		recordEntity := decodeRecord(data)
-		record = &recordEntity
+		if data == nil {
+			return nil
+		}
+		recordEntity, err := decodeRecord(data)
+		if err != nil {
+			return err
+		}
+		record = recordEntity
 		return nil
 	})
 	return record, err
 }
 
-func encodeRecord(record *DatasetRecord) []byte {
+func encodeRecord(record *DatasetRecord) ([]byte, error) {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(record)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
-func decodeRecord(data []byte) DatasetRecord {
+func decodeRecord(data []byte) (*DatasetRecord, error) {
 	d := DatasetRecord{}
 	dec := gob.NewDecoder(bytes.NewReader(data))
 	err := dec.Decode(&d)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return d
+	return &d, nil
 }
 
 func DeleteRecord(id string) error {
@@ -102,7 +111,11 @@ func SaveArchiveRecord(record *DatasetRecord) error {
 		activeBucket := tx.Bucket([]byte(Bucket_Active))
 		activeBucket.Delete([]byte(record.ID))
 		archiveBucket := tx.Bucket([]byte(Bucket_Archived))
-		archiveBucket.Put([]byte(record.ID), encodeRecord(record))
+		data, err := encodeRecord(record)
+		if err != nil {
+			return err
+		}
+		archiveBucket.Put([]byte(record.ID), data)
 		return nil
 	})
 	return err
@@ -113,8 +126,11 @@ func ListActiveRecords() ([]DatasetRecord, error) {
 	err := currentDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(Bucket_Active))
 		err := bucket.ForEach(func(k, v []byte) error {
-			record := decodeRecord(v)
-			list = append(list, record)
+			record, err := decodeRecord(v)
+			if err != nil {
+				return err
+			}
+			list = append(list, *record)
 			return nil
 		})
 		return err

@@ -1,0 +1,10 @@
+**/*
+!**/*.go
+!**/*.md
+*
+!.gitignore
+!*.go
+!*.md
+!config-test.yml
+!go.mod
+!go.sum
