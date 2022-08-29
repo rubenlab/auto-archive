@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,11 +16,15 @@ const DatasetFileName = ".datasetinfo"
 const FramesFolderName = "frames"
 
 type Datasetinfo struct {
-	ID string `yaml:"id"`
+	ID         string       `yaml:"id"`
+	BackupTime sql.NullTime `yaml:"backup-time"`
 }
 
-func readDatasetinfo(path string) (*Datasetinfo, error) {
-	data, err := ioutil.ReadFile(path)
+// read dataset info stored in the .datasetinfo file of a dataset folder
+// path: path to the dataset folder
+func ReadDatasetinfo(path string) (*Datasetinfo, error) {
+	datasetfilePath := filepath.Join(path, DatasetFileName)
+	data, err := ioutil.ReadFile(datasetfilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("can not open config file %s", path))
 	}
@@ -43,7 +48,7 @@ func readDatasetinfo(path string) (*Datasetinfo, error) {
 //
 // return true if it's a dataset folder
 func CreateIfDataset(path string) (bool, error) {
-	datasetfilePath := filepath.Join(path, ".datasetinfo")
+	datasetfilePath := filepath.Join(path, DatasetFileName)
 	_, err := os.Stat(datasetfilePath)
 	if err != nil { // .datasetinfo folder doesn't exist
 		framesFolderPath := filepath.Join(path, FramesFolderName)
@@ -110,7 +115,7 @@ func AddDataset(path string) error {
 //
 // return it's id
 func createDatasetInfo(path string) (string, error) {
-	datasetfilePath := filepath.Join(path, ".datasetinfo")
+	datasetfilePath := filepath.Join(path, DatasetFileName)
 	id := uuid.New().String()
 	info := Datasetinfo{ID: id}
 	data, err := yaml.Marshal(info)
@@ -122,4 +127,14 @@ func createDatasetInfo(path string) (string, error) {
 		return "", err
 	}
 	return id, nil
+}
+
+func SaveDatasetInfo(path string, info *Datasetinfo) error {
+	datasetfilePath := filepath.Join(path, DatasetFileName)
+	data, err := yaml.Marshal(info)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(datasetfilePath, data, os.FileMode(int(0640)))
+	return err
 }

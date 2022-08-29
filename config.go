@@ -17,6 +17,7 @@ type AppConfig struct {
 	NoticeBefore    []int  `yaml:"notice-before"`    // how many days to notice before archive
 	EmailTo         string `yaml:"email-to"`         // email to whom when folder will be archived
 	ArchiveCommand  string `yaml:"archive-command"`  // archive command, ${path} can be used.
+	BackupCommand   string `yaml:"backup-command"`   // archive command, ${id}, ${dir}, ${file}, ${date} can be used. example: cd ${dir} && tar --files-from=${file} --file=${id}/${date}/archive.tar
 	SmtpHost        string `yaml:"smtp-host"`        // smtp host address
 	SmtpPort        int    `yaml:"smtp-port"`        // smtp port
 	SmtpUser        string `yaml:"smtp-user"`        // smtp username

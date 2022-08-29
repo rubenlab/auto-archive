@@ -122,9 +122,17 @@ func SaveArchiveRecord(record *DatasetRecord) error {
 }
 
 func ListActiveRecords() ([]DatasetRecord, error) {
+	return listBucketRecords(Bucket_Active)
+}
+
+func ListArchivedRecords() ([]DatasetRecord, error) {
+	return listBucketRecords(Bucket_Archived)
+}
+
+func listBucketRecords(bucketName string) ([]DatasetRecord, error) {
 	list := make([]DatasetRecord, 0, 10)
 	err := currentDb.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(Bucket_Active))
+		bucket := tx.Bucket([]byte(bucketName))
 		err := bucket.ForEach(func(k, v []byte) error {
 			record, err := decodeRecord(v)
 			if err != nil {

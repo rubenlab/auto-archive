@@ -8,12 +8,13 @@ import (
 	"strings"
 )
 
-func doArchive(path string) error {
+func doArchive(path string, id string) error {
 	archiveCommand := appConfig.ArchiveCommand
-	return doArchiveInternal(path, archiveCommand)
+	return execArchiveCommand(path, id, archiveCommand)
 }
 
-func doArchiveInternal(path string, archiveCommand string) error {
+func execArchiveCommand(path string, id string, archiveCommand string) error {
+	archiveCommand = strings.Replace(archiveCommand, "${id}", id, -1)
 	archiveCommand = strings.Replace(archiveCommand, "${path}", path, -1)
 	fields, err := getFields(archiveCommand)
 	if err != nil {

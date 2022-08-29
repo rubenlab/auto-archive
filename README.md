@@ -15,6 +15,7 @@ scan-interval: 3
 archive-interval: 30
 email-to: tianming.yi@med.uni-goettingen.de
 archive-command: "rm -rf \"${path}\""
+backup-command: "cd ${dir} && tar --files-from=${file} --file=${id}/${date}/archive.tar"
 notice-before:
   - 10
   - 5

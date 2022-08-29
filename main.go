@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	inspectV := flag.Bool("inspect", false, "inspect existing records")
 	flag.Parse()
 	configFile := flag.Arg(0)
 	if configFile == "" {
@@ -18,7 +19,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't load config, err: %v", err)
 	}
-	initDb()
+	_, err = initDb()
+	if err != nil {
+		log.Fatalf("can't init db, error: %v", err)
+	}
+	if *inspectV {
+		err = inspect()
+		if err != nil {
+			log.Fatalf("fail to inspect, err: %v", err)
+		}
+		return
+	}
 	err = ScanFolders(appConfig.Root)
 	if err != nil {
 		log.Println(err)

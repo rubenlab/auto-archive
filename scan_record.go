@@ -150,7 +150,7 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 
 	// Archive the directory and move the record
 	if leftDays <= 0 {
-		err := doArchive(path)
+		err := doArchive(path, id)
 		if err != nil {
 			addErrResult(id, path, err, result)
 			UpdateRecord(record)
@@ -166,6 +166,13 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 		}
 		result.ArchivedFolders = append(result.ArchivedFolders, archivedFolder)
 		return
+	} else { // make incremental backups
+		err := doBackup(path)
+		if err != nil {
+			addErrResult(id, path, err, result)
+			UpdateRecord(record)
+			return
+		}
 	}
 
 	// check if notice should send, add it to the result object.

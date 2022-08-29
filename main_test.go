@@ -17,7 +17,7 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestDoArchive(t *testing.T) {
-	err := doArchiveInternal("./config-test.yml", "echo \"${path}\"")
+	err := execArchiveCommand("./config-test.yml", "test", "echo \"${path}\"")
 	if err != nil {
 		t.Error(err)
 	}
