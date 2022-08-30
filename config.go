@@ -22,6 +22,7 @@ type AppConfig struct {
 	SmtpPort        int    `yaml:"smtp-port"`        // smtp port
 	SmtpUser        string `yaml:"smtp-user"`        // smtp username
 	SmtpPassword    string `yaml:"smtp-password"`    // smtp password
+	LogFile         string `yaml:"log-file"`         // log file
 }
 
 var appConfig *AppConfig = &AppConfig{

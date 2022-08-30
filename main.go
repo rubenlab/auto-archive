@@ -19,9 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't load config, err: %v", err)
 	}
+	initLog()
+	log.Println("start auto archive")
 	_, err = initDb()
 	if err != nil {
-		log.Fatalf("can't init db, error: %v", err)
+		log.Fatalf("can't init db, error: %v\n", err)
 	}
 	if *inspectV {
 		err = inspect()
@@ -42,4 +44,5 @@ func main() {
 	if err != nil {
 		log.Printf("error send notice, error: %v", err)
 	}
+	log.Println("finish auto archive")
 }
