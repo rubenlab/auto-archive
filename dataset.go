@@ -15,6 +15,8 @@ import (
 const DatasetFileName = ".datasetinfo"
 const FramesFolderName = "frames"
 
+var CharacterFolderNames = [...]string{"frames", "Images-Disc1"}
+
 type Datasetinfo struct {
 	ID         string       `yaml:"id"`
 	BackupTime sql.NullTime `yaml:"backup-time"`
@@ -51,9 +53,7 @@ func CreateIfDataset(path string) (bool, error) {
 	datasetfilePath := filepath.Join(path, DatasetFileName)
 	_, err := os.Stat(datasetfilePath)
 	if err != nil { // .datasetinfo folder doesn't exist
-		framesFolderPath := filepath.Join(path, FramesFolderName)
-		d, err := os.Stat(framesFolderPath)
-		if err == nil && d.IsDir() { //frames folder exists
+		if containsCharacterFolder(path) {
 			err = AddDataset(path)
 			if err != nil {
 				return false, err
@@ -88,6 +88,18 @@ func CreateIfDataset(path string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+// contains character folder that can decide it's a dataset folder
+func containsCharacterFolder(path string) bool {
+	for _, dir := range CharacterFolderNames {
+		dirPath := filepath.Join(path, dir)
+		d, err := os.Stat(dirPath)
+		if err == nil && d.IsDir() { //frames folder exists
+			return true
+		}
+	}
+	return false
 }
 
 // Add a folder as a dataset folder, it will do the following things:
