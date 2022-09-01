@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"os"
 	"sort"
 	"time"
@@ -60,6 +61,7 @@ func scanRecord(record *DatasetRecord, result *ScanResult) {
 		if os.IsNotExist(err) {
 			DeleteRecord(record.ID)
 		} else {
+			log.Printf("failed to open directory, error: %v", err)
 			addErrResult(id, path, err, result)
 		}
 	}
@@ -71,6 +73,7 @@ func scanRecord(record *DatasetRecord, result *ScanResult) {
 	}
 	lastUpdateTime, err := scanUpdateTime(path)
 	if err != nil {
+		log.Printf("failed to scan update time, error: %v", err)
 		addErrResult(id, path, err, result)
 	}
 	record.LastModifyTime = sql.NullTime{
@@ -152,13 +155,16 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 	if leftDays <= 0 {
 		err := doArchive(path, id)
 		if err != nil {
+			log.Printf("failed to archive, error: %v", err)
 			addErrResult(id, path, err, result)
 			UpdateRecord(record)
 			return
 		}
 		err = SaveArchiveRecord(record)
 		if err != nil {
+			log.Printf("failed to save archive record, error: %v", err)
 			addErrResult(id, path, errors.Wrap(err, "failed to save archived record"), result)
+			return
 		}
 		archivedFolder := ArchivedFolder{
 			ID:   id,
@@ -169,6 +175,7 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 	} else { // make incremental backups
 		err := doBackup(path)
 		if err != nil {
+			log.Printf("failed to do backup, error: %v", err)
 			addErrResult(id, path, err, result)
 			UpdateRecord(record)
 			return
