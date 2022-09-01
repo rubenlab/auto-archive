@@ -9,6 +9,7 @@ import (
 
 func main() {
 	inspectV := flag.Bool("inspect", false, "inspect existing records")
+	loadBalance := flag.Bool("load-balance", false, "load balance existing records")
 	flag.Parse()
 	configFile := flag.Arg(0)
 	if configFile == "" {
@@ -30,6 +31,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("fail to inspect, err: %v", err)
 		}
+		return
+	} else if *loadBalance {
+		err = LoadBalancing()
+		if err != nil {
+			log.Fatalf("fail to load balance, err: %v", err)
+		}
+		log.Println("finish load balance")
 		return
 	}
 	err = ScanFolders(appConfig.Root)
