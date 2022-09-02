@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/gammazero/workerpool"
 	"github.com/pkg/errors"
 )
 
@@ -37,6 +38,22 @@ type ArchivedFolder struct {
 	Path string
 }
 
+type ScanResultModifier struct {
+	Error          *ScanError
+	Notice         *ArchiveNotice
+	ArchivedFolder *ArchivedFolder
+}
+
+func (m *ScanResultModifier) modify(result *ScanResult) {
+	if m.Error != nil {
+		result.Errors = append(result.Errors, *m.Error)
+	} else if m.Notice != nil {
+		result.Notices = append(result.Notices, *m.Notice)
+	} else if m.ArchivedFolder != nil {
+		result.ArchivedFolders = append(result.ArchivedFolders, *m.ArchivedFolder)
+	}
+}
+
 func ScanRecords() (*ScanResult, error) {
 	records, err := ListActiveRecords()
 	if err != nil {
@@ -47,13 +64,28 @@ func ScanRecords() (*ScanResult, error) {
 		Notices:         make([]ArchiveNotice, 0, 10),
 		ArchivedFolders: make([]ArchivedFolder, 0, 10),
 	}
+	c := make(chan ScanResultModifier)
+	finishChan := make(chan int)
+	go func(result *ScanResult, c *chan ScanResultModifier, finishChan *chan int) {
+		for v := range *c {
+			v.modify(result)
+		}
+		close(*finishChan)
+	}(&scanResult, &c, &finishChan)
+	wp := workerpool.New(appConfig.cores)
 	for _, record := range records {
-		scanRecord(&record, &scanResult)
+		wp.Submit(func() {
+			scanRecord(&record, &c)
+		})
 	}
+	wp.StopWait()
+	close(c)
+	// wait for the finish signal
+	<-finishChan
 	return &scanResult, nil
 }
 
-func scanRecord(record *DatasetRecord, result *ScanResult) {
+func scanRecord(record *DatasetRecord, c *chan ScanResultModifier) {
 	id := record.ID
 	path := record.Path
 	fi, err := os.Stat(path)
@@ -62,7 +94,7 @@ func scanRecord(record *DatasetRecord, result *ScanResult) {
 			DeleteRecord(record.ID)
 		} else {
 			log.Printf("failed to open directory, error: %v", err)
-			addErrResult(id, path, err, result)
+			addErrResult(id, path, err, c)
 		}
 	}
 	if !fi.IsDir() {
@@ -74,7 +106,7 @@ func scanRecord(record *DatasetRecord, result *ScanResult) {
 	lastUpdateTime, err := scanUpdateTime(path)
 	if err != nil {
 		log.Printf("failed to scan update time, error: %v", err)
-		addErrResult(id, path, err, result)
+		addErrResult(id, path, err, c)
 	}
 	record.LastModifyTime = sql.NullTime{
 		Time:  lastUpdateTime,
@@ -84,16 +116,16 @@ func scanRecord(record *DatasetRecord, result *ScanResult) {
 		Time:  time.Now(),
 		Valid: true,
 	}
-	afterScan(record, result)
+	afterScan(record, c)
 }
 
-func addErrResult(id string, path string, err error, result *ScanResult) {
+func addErrResult(id string, path string, err error, c *chan ScanResultModifier) {
 	scanErr := ScanError{
 		ID:   id,
 		Path: path,
 		Msg:  err.Error(),
 	}
-	result.Errors = append(result.Errors, scanErr)
+	*c <- ScanResultModifier{Error: &scanErr}
 }
 
 // if a directory is never scanned, or
@@ -140,7 +172,7 @@ func isShouldScan(record *DatasetRecord) bool {
 
 // after scan and update lastModify time,
 // send notice or do archive
-func afterScan(record *DatasetRecord, result *ScanResult) {
+func afterScan(record *DatasetRecord, c *chan ScanResultModifier) {
 	id := record.ID
 	path := record.Path
 	now := time.Now()
@@ -156,27 +188,27 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 		err := doArchive(path, id)
 		if err != nil {
 			log.Printf("failed to archive, error: %v", err)
-			addErrResult(id, path, err, result)
+			addErrResult(id, path, err, c)
 			UpdateRecord(record)
 			return
 		}
 		err = SaveArchiveRecord(record)
 		if err != nil {
 			log.Printf("failed to save archive record, error: %v", err)
-			addErrResult(id, path, errors.Wrap(err, "failed to save archived record"), result)
+			addErrResult(id, path, errors.Wrap(err, "failed to save archived record"), c)
 			return
 		}
 		archivedFolder := ArchivedFolder{
 			ID:   id,
 			Path: path,
 		}
-		result.ArchivedFolders = append(result.ArchivedFolders, archivedFolder)
+		*c <- ScanResultModifier{ArchivedFolder: &archivedFolder}
 		return
 	} else { // make incremental backups
 		err := doBackup(path)
 		if err != nil {
 			log.Printf("failed to do backup, error: %v", err)
-			addErrResult(id, path, err, result)
+			addErrResult(id, path, err, c)
 			UpdateRecord(record)
 			return
 		}
@@ -198,7 +230,7 @@ func afterScan(record *DatasetRecord, result *ScanResult) {
 					Path:              path,
 					DaysBeforeArchive: noticeLeftDays,
 				}
-				result.Notices = append(result.Notices, notice)
+				*c <- ScanResultModifier{Notice: &notice}
 				record.NoticedLeftDays = noticeLeftDays
 				UpdateRecord(record)
 				return

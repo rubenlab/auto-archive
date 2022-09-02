@@ -6,6 +6,7 @@ scan-interval: 3
 archive-interval: 30
 email-to: tianming.yi@med.uni-goettingen.de
 archive-command: "rm -rf \"${path}\""
+backup-command: "cat \"${file}\""
 notice-before:
   - 10
   - 5
@@ -15,3 +16,4 @@ smtp-port: 587
 smtp-user: "rubsak1@outlook.com"
 smtp-password: "efndkubpkaksfmsx"
 log-file: ""
+cores: 4

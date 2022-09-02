@@ -23,6 +23,7 @@ type AppConfig struct {
 	SmtpUser        string `yaml:"smtp-user"`        // smtp username
 	SmtpPassword    string `yaml:"smtp-password"`    // smtp password
 	LogFile         string `yaml:"log-file"`         // log file
+	cores           int    // cores to use
 }
 
 var appConfig *AppConfig = &AppConfig{
@@ -32,6 +33,7 @@ var appConfig *AppConfig = &AppConfig{
 	ArchiveInterval: 30,
 	NoticeBefore:    []int{10, 5, 1},
 	SmtpHost:        "localhost", // will use local email server
+	cores:           4,
 }
 
 func loadConfig(path string) error {
