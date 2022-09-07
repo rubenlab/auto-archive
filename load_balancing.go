@@ -6,6 +6,10 @@ import (
 )
 
 func LoadBalancing() error {
+	err := ScanFolders(appConfig.Root)
+	if err != nil {
+		return err
+	}
 	scanInterval := appConfig.ScanInterval
 	if scanInterval <= 1 {
 		return nil
