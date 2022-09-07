@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/nightlyone/lockfile"
 )
 
 func main() {
@@ -21,6 +23,15 @@ func main() {
 		log.Fatalf("can't load config, err: %v", err)
 	}
 	initLog()
+	pidLock, lockErr := tryLock()
+	defer func() {
+		if pidLock != nil {
+			pidLock.Unlock()
+		}
+	}()
+	if lockErr != nil {
+		os.Exit(1)
+	}
 	log.Println("start auto archive")
 	_, err = initDb()
 	if err != nil {
@@ -53,4 +64,19 @@ func main() {
 		log.Printf("error send notice, error: %v", err)
 	}
 	log.Println("finish auto archive")
+}
+
+func tryLock() (*lockfile.Lockfile, error) {
+	if appConfig.PidFile == "" {
+		return nil, nil
+	}
+	fileLock, err := lockfile.New(appConfig.PidFile)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+
+	err = fileLock.TryLock()
+
+	return &fileLock, err
 }

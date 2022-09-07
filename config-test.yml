@@ -16,4 +16,5 @@ smtp-port: 587
 smtp-user: "rubsak1@outlook.com"
 smtp-password: "efndkubpkaksfmsx"
 log-file: ""
+pid-file:""
 cores: 4

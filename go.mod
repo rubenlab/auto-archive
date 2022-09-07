@@ -14,5 +14,6 @@ require github.com/gammazero/deque v0.2.0 // indirect
 
 require (
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
+	github.com/nightlyone/lockfile v1.0.0
 	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
 )

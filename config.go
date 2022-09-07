@@ -23,6 +23,7 @@ type AppConfig struct {
 	SmtpUser        string `yaml:"smtp-user"`        // smtp username
 	SmtpPassword    string `yaml:"smtp-password"`    // smtp password
 	LogFile         string `yaml:"log-file"`         // log file
+	PidFile         string `yaml:"pid-file"`         // pid file
 	cores           int    // cores to use
 }
 
@@ -33,6 +34,7 @@ var appConfig *AppConfig = &AppConfig{
 	ArchiveInterval: 30,
 	NoticeBefore:    []int{10, 5, 1},
 	SmtpHost:        "localhost", // will use local email server
+	PidFile:         "/tmp/autoarchive.pid",
 	cores:           4,
 }
 
