@@ -2,11 +2,10 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +14,10 @@ import (
 )
 
 func doBackup(path string) error {
+	backupCommand := appConfig.BackupCommand
+	if backupCommand == "" { // if there's no backup command, skip backup
+		return nil
+	}
 	info, err := ReadDatasetinfo(path)
 	if err != nil {
 		return err
@@ -150,12 +153,24 @@ func execBackupCommand(id string, dir string, file string, date string, backupCo
 	name := fields[0]
 	args := fields[1:]
 	cmd := exec.Command(name, args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	rc, logErr := getBackupWriter(dir, id)
+	defer func() {
+		if rc != nil {
+			rc.Close()
+		}
+	}()
+	if logErr == nil {
+		cmd.Stdout = rc
+	}
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
-	log.Printf("output of backup command '%s':\n%s", backupCommand, out.String())
 	return nil
+}
+
+func getBackupWriter(path string, id string) (io.WriteCloser, error) {
+	logFileName := "backup_" + id + ".log"
+	title := fmt.Sprintf("folder path: %s\n", path)
+	return getLogWriter(logFileName, title)
 }

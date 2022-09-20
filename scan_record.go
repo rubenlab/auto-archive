@@ -72,10 +72,11 @@ func ScanRecords() (*ScanResult, error) {
 		}
 		close(*finishChan)
 	}(&scanResult, &c, &finishChan)
-	wp := workerpool.New(appConfig.cores)
+	wp := workerpool.New(appConfig.Cores)
 	for _, record := range records {
+		rf := record
 		wp.Submit(func() {
-			scanRecord(&record, &c)
+			scanRecord(rf, &c)
 		})
 	}
 	wp.StopWait()
@@ -85,7 +86,7 @@ func ScanRecords() (*ScanResult, error) {
 	return &scanResult, nil
 }
 
-func scanRecord(record *DatasetRecord, c *chan ScanResultModifier) {
+func scanRecord(record DatasetRecord, c *chan ScanResultModifier) {
 	id := record.ID
 	path := record.Path
 	fi, err := os.Stat(path)
@@ -96,12 +97,17 @@ func scanRecord(record *DatasetRecord, c *chan ScanResultModifier) {
 			log.Printf("failed to open directory, error: %v", err)
 			addErrResult(id, path, err, c)
 		}
+		return
 	}
 	if !fi.IsDir() {
 		DeleteRecord(record.ID)
-	}
-	if !isShouldScan(record) {
 		return
+	}
+	if !isShouldScan(&record) {
+		log.Printf("skip scanning record: %s, %s", record.ID, record.Path)
+		return
+	} else {
+		log.Printf("start scanning record: %s, %s", record.ID, record.Path)
 	}
 	lastUpdateTime, err := scanUpdateTime(path)
 	if err != nil {
@@ -116,7 +122,8 @@ func scanRecord(record *DatasetRecord, c *chan ScanResultModifier) {
 		Time:  time.Now(),
 		Valid: true,
 	}
-	afterScan(record, c)
+	afterScan(&record, c)
+	log.Printf("finish scanning record: %s, %s", record.ID, record.Path)
 }
 
 func addErrResult(id string, path string, err error, c *chan ScanResultModifier) {

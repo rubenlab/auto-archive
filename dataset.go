@@ -44,9 +44,9 @@ func ReadDatasetinfo(path string) (*Datasetinfo, error) {
 //
 // 2. If a folder named "frames" is under this folder
 //
-// If it's a dataset folder, but there's no .datasetinfo file inside it, create it and add the record to the database
+// # If it's a dataset folder, but there's no .datasetinfo file inside it, create it and add the record to the database
 //
-// If there's a .datasetinfo file inside, but the id is not recorded by the database, add it to the database
+// # If there's a .datasetinfo file inside, but the id is not recorded by the database, add it to the database
 //
 // return true if it's a dataset folder
 func CreateIfDataset(path string) (bool, error) {
@@ -134,7 +134,7 @@ func createDatasetInfo(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(datasetfilePath, data, os.FileMode(int(0640)))
+	err = ioutil.WriteFile(datasetfilePath, data, FileModeCreate)
 	if err != nil {
 		return "", err
 	}
@@ -147,6 +147,6 @@ func SaveDatasetInfo(path string, info *Datasetinfo) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(datasetfilePath, data, os.FileMode(int(0640)))
+	err = ioutil.WriteFile(datasetfilePath, data, FileModeCreate)
 	return err
 }

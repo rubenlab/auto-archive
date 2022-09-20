@@ -22,21 +22,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't load config, err: %v", err)
 	}
-	initLog()
-	pidLock, lockErr := tryLock()
-	defer func() {
-		if pidLock != nil {
-			pidLock.Unlock()
-		}
-	}()
-	if lockErr != nil {
-		os.Exit(1)
-	}
-	log.Println("start auto archive")
 	_, err = initDb()
 	if err != nil {
 		log.Fatalf("can't init db, error: %v\n", err)
 	}
+	// initialization finish
+
 	if *inspectV {
 		err = inspect()
 		if err != nil {
@@ -44,6 +35,7 @@ func main() {
 		}
 		return
 	} else if *loadBalance {
+		log.Println("start load balance")
 		err = LoadBalancing()
 		if err != nil {
 			log.Fatalf("fail to load balance, err: %v", err)
@@ -51,7 +43,38 @@ func main() {
 		log.Println("finish load balance")
 		return
 	}
-	err = ScanFolders(appConfig.Root)
+
+	// init log, log after here will be written to config.LogFolder
+	logCloser, logErr := initLog()
+	if logErr != nil {
+		log.Printf("init log error, error is: %v", logErr)
+	}
+	defer func() {
+		if logCloser != nil {
+			logCloser.Close()
+		}
+	}()
+
+	// get pid lock, avoid concurrent execution
+	pidLock, lockErr := tryLock()
+	defer func() {
+		if pidLock != nil {
+			pidLock.Unlock()
+		}
+	}()
+	if lockErr != nil {
+		log.Println("failed to get lock, other autoarchive process is running")
+		os.Exit(1)
+	}
+
+	// do auto archiving
+	log.Println("start auto archive")
+	autoArchive()
+	log.Println("finish auto archive")
+}
+
+func autoArchive() {
+	err := ScanFolders(appConfig.Root)
 	if err != nil {
 		log.Println(err)
 	}
@@ -63,7 +86,6 @@ func main() {
 	if err != nil {
 		log.Printf("error send notice, error: %v", err)
 	}
-	log.Println("finish auto archive")
 }
 
 func tryLock() (*lockfile.Lockfile, error) {

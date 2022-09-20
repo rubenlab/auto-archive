@@ -1,15 +1,21 @@
 package main
 
 import (
-	"bytes"
 	"encoding/csv"
-	"log"
+	"errors"
+	"fmt"
+	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 func doArchive(path string, id string) error {
 	archiveCommand := appConfig.ArchiveCommand
+	if archiveCommand == "" {
+		return errors.New("archive command is empty")
+	}
 	return execArchiveCommand(path, id, archiveCommand)
 }
 
@@ -23,14 +29,36 @@ func execArchiveCommand(path string, id string, archiveCommand string) error {
 	name := fields[0]
 	args := fields[1:]
 	cmd := exec.Command(name, args...)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	rc, logErr := getArchiveWriter(path, id)
+	defer func() {
+		if rc != nil {
+			rc.Close()
+		}
+	}()
+	if logErr == nil {
+		cmd.Stdout = rc
+	}
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
-	log.Printf("output of archive command '%s':\n%s", archiveCommand, out.String())
 	return nil
+}
+
+func getLogWriter(fileName string, title string) (io.WriteCloser, error) {
+	logFilePath := filepath.Join(logOutputFolder, fileName)
+	file, err := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE, FileModeCreate)
+	if err != nil {
+		return nil, err
+	}
+	file.WriteString(title)
+	return file, nil
+}
+
+func getArchiveWriter(path string, id string) (io.WriteCloser, error) {
+	logFileName := "archive_" + id + ".log"
+	title := fmt.Sprintf("folder path: %s\n", path)
+	return getLogWriter(logFileName, title)
 }
 
 func getFields(str string) ([]string, error) {

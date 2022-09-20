@@ -1,11 +1,15 @@
 package main
 
 import (
+	"io/fs"
 	"io/ioutil"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
+
+const FileModeCreate = fs.FileMode(0640)
+const FolderModeCreate = fs.FileMode(0750)
 
 type AppConfig struct {
 	DB              string `yaml:"db"`
@@ -22,9 +26,9 @@ type AppConfig struct {
 	SmtpPort        int    `yaml:"smtp-port"`        // smtp port
 	SmtpUser        string `yaml:"smtp-user"`        // smtp username
 	SmtpPassword    string `yaml:"smtp-password"`    // smtp password
-	LogFile         string `yaml:"log-file"`         // log file
+	LogFolder       string `yaml:"log-folder"`       // folder to write out logs
 	PidFile         string `yaml:"pid-file"`         // pid file
-	cores           int    // cores to use
+	Cores           int    // cores to use
 }
 
 var appConfig *AppConfig = &AppConfig{
@@ -35,7 +39,7 @@ var appConfig *AppConfig = &AppConfig{
 	NoticeBefore:    []int{10, 5, 1},
 	SmtpHost:        "localhost", // will use local email server
 	PidFile:         "/tmp/autoarchive.pid",
-	cores:           4,
+	Cores:           4,
 }
 
 func loadConfig(path string) error {
