@@ -14,7 +14,7 @@ notice-before:
 smtp-host: "smtp-mail.outlook.com"
 smtp-port: 587
 smtp-user: "rubsak1@outlook.com"
-smtp-password: "efndkubpkaksfmsx"
+smtp-password: "123456"
 log-folder: "log"
 pid-file: ""
 cores: 4

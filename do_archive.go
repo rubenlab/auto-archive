@@ -14,7 +14,7 @@ import (
 func doArchive(path string, id string) error {
 	archiveCommand := appConfig.ArchiveCommand
 	if archiveCommand == "" {
-		return errors.New("archive command is empty")
+		return errors.New("archive command is empty, this folder should be archived")
 	}
 	return execArchiveCommand(path, id, archiveCommand)
 }

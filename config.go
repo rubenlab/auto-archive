@@ -56,8 +56,8 @@ func loadConfig(path string) error {
 	if err != nil {
 		return errors.Wrap(err, "can not unmarshal config data")
 	}
-	if appConfig.ArchiveCommand == "" {
-		return errors.New("archive command must be provided")
-	}
+	// if appConfig.ArchiveCommand == "" {
+	// 	return errors.New("archive command must be provided")
+	// }
 	return nil
 }
